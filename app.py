@@ -44,78 +44,123 @@ def train_model(df):
 # -------------------------------
 # Streamlit Page Config
 # -------------------------------
-st.set_page_config(page_title="Duality AI Dashboard", layout="wide")
+st.set_page_config(page_title="Duality AI Website", layout="wide")
 
+# Custom CSS
 st.markdown(
     """
     <style>
-    .main { background: linear-gradient(to right, #0f2027, #203a43, #2c5364); color:white; }
+    body { background: linear-gradient(to right, #141E30, #243B55); color: white; }
     h1,h2,h3,h4,h5,h6 { color: #FFD700; }
-    .stMetric { background: #1f2c3e; padding: 10px; border-radius: 12px; }
+    .glass-card {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 20px;
+        border-radius: 16px;
+        backdrop-filter: blur(10px);
+        margin-bottom: 20px;
+    }
     </style>
     """,
     unsafe_allow_html=True
 )
 
-st.title("🌌 Duality AI Dashboard")
-st.caption("Sim-to-Real Transfer Learning Prototype")
+# -------------------------------
+# Navigation Menu
+# -------------------------------
+menu = st.sidebar.radio("🌐 Navigate", ["Home", "Data", "Training", "Predictions", "About"])
 
-# Sidebar Navigation
-menu = st.sidebar.radio("📂 Navigate", ["Data", "Training & Accuracy", "Predictions"])
+# -------------------------------
+# Home Page
+# -------------------------------
+if menu == "Home":
+    st.markdown("""
+    <div style='text-align:center;'>
+        <h1>🌌 Duality AI</h1>
+        <h3>Bridging Simulation & Reality with AI</h3>
+        <p>Hackathon Project – Demonstrating Sim-to-Real Transfer Learning</p>
+    </div>
+    """, unsafe_allow_html=True)
 
-# Data
-sim_data = generate_simulation_data()
-real_data = generate_real_data()
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown("<div class='glass-card'><h3>🚀 Simulation</h3><p>Train on synthetic data efficiently.</p></div>", unsafe_allow_html=True)
+    with col2:
+        st.markdown("<div class='glass-card'><h3>🌍 Real World</h3><p>Adapt models to noisy real-world conditions.</p></div>", unsafe_allow_html=True)
+    with col3:
+        st.markdown("<div class='glass-card'><h3>⚡ Transfer</h3><p>Bridge the gap seamlessly between both domains.</p></div>", unsafe_allow_html=True)
 
-if menu == "Data":
-    st.subheader("🔍 Data Exploration")
+# -------------------------------
+# Data Page
+# -------------------------------
+elif menu == "Data":
+    st.header("🔍 Data Visualization")
+    sim_data = generate_simulation_data()
+    real_data = generate_real_data()
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown("**Simulation Data (Synthetic)**")
-        fig1 = px.scatter_3d(sim_data, x="Feature1", y="Feature2", z="Label", color=sim_data["Label"].astype(str),
-                             title="3D Simulation Data")
+        st.subheader("Simulation Data")
+        fig1 = px.scatter(sim_data, x="Feature1", y="Feature2", color=sim_data["Label"].astype(str))
         st.plotly_chart(fig1, use_container_width=True)
     with col2:
-        st.markdown("**Real Data (Noisy)**")
-        fig2 = px.scatter_3d(real_data, x="Feature1", y="Feature2", z="Label", color=real_data["Label"].astype(str),
-                             title="3D Real Data")
+        st.subheader("Real-World Data")
+        fig2 = px.scatter(real_data, x="Feature1", y="Feature2", color=real_data["Label"].astype(str))
         st.plotly_chart(fig2, use_container_width=True)
 
-elif menu == "Training & Accuracy":
-    st.subheader("📊 Model Training & Performance")
+# -------------------------------
+# Training Page
+# -------------------------------
+elif menu == "Training":
+    st.header("📊 Model Training Results")
+    sim_data = generate_simulation_data()
+    real_data = generate_real_data()
     sim_model, sim_scaler, sim_acc = train_model(sim_data)
     real_model, real_scaler, real_acc = train_model(real_data)
-
-    col3, col4 = st.columns(2)
-    with col3:
-        st.metric("Simulation Accuracy", f"{sim_acc*100:.2f}%")
-    with col4:
-        st.metric("Real-World Accuracy", f"{real_acc*100:.2f}%")
 
     df_compare = pd.DataFrame({
         "Domain": ["Simulation", "Real World"],
         "Accuracy": [sim_acc, real_acc]
     })
-    st.markdown("### Accuracy Comparison")
-    fig3 = px.bar(df_compare, x="Domain", y="Accuracy", text="Accuracy", color="Domain",
-                 color_discrete_map={"Simulation":"#1f77b4", "Real World":"#ff7f0e"})
+
+    st.metric("Simulation Accuracy", f"{sim_acc*100:.2f}%")
+    st.metric("Real-World Accuracy", f"{real_acc*100:.2f}%")
+
+    fig3 = px.bar(df_compare, x="Domain", y="Accuracy", color="Domain", text="Accuracy")
     st.plotly_chart(fig3, use_container_width=True)
 
+# -------------------------------
+# Predictions Page
+# -------------------------------
 elif menu == "Predictions":
-    st.subheader("⚡ Interactive Predictions")
+    st.header("⚡ Try Predictions")
+    sim_data = generate_simulation_data()
+    real_data = generate_real_data()
     sim_model, sim_scaler, sim_acc = train_model(sim_data)
     real_model, real_scaler, real_acc = train_model(real_data)
 
-    f1 = st.slider("Feature 1 Value", 0.0, 10.0, 5.0)
-    f2 = st.slider("Feature 2 Value", 0.0, 10.0, 5.0)
+    f1 = st.slider("Feature 1", 0.0, 10.0, 5.0)
+    f2 = st.slider("Feature 2", 0.0, 10.0, 5.0)
 
     sim_pred = sim_model.predict(sim_scaler.transform([[f1, f2]]))[0]
     real_pred = real_model.predict(real_scaler.transform([[f1, f2]]))[0]
 
-    col5, col6 = st.columns(2)
-    with col5:
-        st.success(f"Simulation Prediction → {'High Risk' if sim_pred==1 else 'Low Risk'}")
-    with col6:
-        st.warning(f"Real-World Prediction → {'High Risk' if real_pred==1 else 'Low Risk'}")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.success(f"Simulation Model → {'High Risk' if sim_pred==1 else 'Low Risk'}")
+    with col2:
+        st.warning(f"Real-World Model → {'High Risk' if real_pred==1 else 'Low Risk'}")
 
-    st.info("This shows how predictions differ when moving from Simulation to Real-World data ✨")
+# -------------------------------
+# About Page
+# -------------------------------
+elif menu == "About":
+    st.header("ℹ️ About Duality AI")
+    st.markdown("""
+    **Duality AI** is a hackathon project showcasing how AI can transfer knowledge between **simulation** environments and **real-world** applications. 
+
+    - 📊 Demonstrates sim-to-real transfer learning.
+    - 🌍 Applies to robotics, healthcare, climate, and smart cities.
+    - 🚀 Built with **Streamlit, Scikit-learn, Plotly**.
+
+    <br>
+    <b>Team Vision:</b> Making AI adaptive, robust, and trustworthy across dual domains.
+    """, unsafe_allow_html=True)
